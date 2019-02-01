@@ -1,5 +1,24 @@
 import datetime
 import hashlib
+import os
+import json
+from flask import Flask
+
+
+node = Flask(__name__)
+
+
+@node.route('/blockchain.json', methods=['GET'])
+def blockchain():
+    node_blocks = sync()
+    python_blocks = []
+    
+    for block in node_blocks:
+        python_blocks.append(block.__str__())
+    
+    json_blocks = json.dumps(python_blocks)
+    
+    return json_blocks
 
 
 
@@ -28,6 +47,34 @@ class Block:
 
     def __str__(self):
         return "Block Hash: " + str(self.hash()) + "\nBlockNo: " + str(self.blockNo) + "\nBlock Data: " + str(self.data) + "\nHashes: " + str(self.nonce) + "\n--------------"
+
+    def self_save(self):
+    blockchainData = 'chaindata'
+    index_string = str(self.blockNo).zfill(6)
+    filename = '%s/%s.json' % (blockchainData, index_string)
+    with open(filename, 'w') as block_file:
+        json.dump(self.__str__(), block_file)
+
+
+def create_first_block():
+    block = Block("Genesis")
+    return block
+
+def sync():
+
+    node_blocks = []
+    blockchainData = 'chaindata'
+
+    if os.path.exists(blockchainData):
+        for filename in os.listdir(blockchainData):
+            if filename.endswith('.json'):
+                filepath = '%s/%s' % (blockchainData, filename)
+                with open(filepath, 'r') as block_file:
+                    block_info = json.load(block_file)
+                    block_object = Block(block_info)
+                    node_blocks.append(block_object)
+    
+    return node_blocks
 
 class Blockchain:
 
@@ -63,3 +110,14 @@ for n in range(10):
 while blockchain.head != None:
     print(blockchain.head)
     blockchain.head = blockchain.head.next
+
+if __name__ == '__main__':
+    blockchainData = 'chaindata/'
+    if not os.path.exists(blockchainData):
+        os.mkdir(blockchainData)
+
+    if os.listdir(blockchainData) == []:
+        first_block = create_first_block()
+        first_block.self_save()
+
+    node.run()
