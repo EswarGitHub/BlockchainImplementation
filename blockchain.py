@@ -264,7 +264,7 @@ class Chain(object):
         return [b.to_dict() for b in self.blocks]
 
 
-node_blocks = sync()
+node_blocks = sync(True)
 
 
 if __name__ == '__main__':
