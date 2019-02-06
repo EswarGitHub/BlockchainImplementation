@@ -32,7 +32,7 @@ CHAINDATA_DIR = 'chaindata/'
 BROADCASTED_BLOCK_DIR = CHAINDATA_DIR + 'bblocs/'
 NUM_ZEROS = 0
 
-STANDARD_ROUNDS = 100000
+STANDARD_ROUNDS = 1
 
 PEERS = [
     'http://localhost:5000/',
@@ -126,23 +126,23 @@ def sync_overall(save=True):
     for peer in PEERS:
         peer_blockchain_url = peer + 'blockchain.json'
         try:
-            print('Inside1')
+            #print('Inside1')
             r = requests.get(peer_blockchain_url)
-            print('Inside2')
+            #print('Inside2')
             peer_blockchain_dict = r.json()
             peer_blocks = [Block(bdict) for bdict in peer_blockchain_dict]
             peer_chain = Chain(peer_blocks)
-            print('Inside1')
-            print(peer_chain.is_valid())
+            #print('Inside1')
+            #print(peer_chain.is_valid())
             if peer_chain.is_valid() and len(peer_chain) > len(best_chain):
                 best_chain = peer_chain
-                print('lksdvnlirhbvnrin')
+                #print('lksdvnlirhbvnrin')
 
         except requests.exceptions.ConnectionError:
             print("Peer at %s not running. Continuing to next peer." % peer)
         else:
             print("Peer at %s is running. Gathered their blochchain for analysis." % peer)
-    print("Longest blockchain is %s blocks" % len(best_chain))
+    print("\n\nLongest blockchain is %s blocks\n\n" % len(best_chain))
     if save:
         best_chain.self_save()
     return best_chain
@@ -150,6 +150,7 @@ def sync_overall(save=True):
 
 
 def mine_for_block(chain=None, rounds=STANDARD_ROUNDS, start_nonce=0, timestamp=None):
+	print("inside")
 	if not chain:
 		chain = sync_local()
 	prev_block = chain.most_recent_block()
@@ -184,8 +185,9 @@ def mine_for_block_listener(event):
 		broadcast_mined_block(new_block)
 		sched.add_job(mine_from_prev_block, args=[new_block], kwargs={'rounds':STANDARD_ROUNDS, 'start_nonce':0}, id='mining') #add the block again
 	else:
-	  print(event.retval)
-	  sched.add_job(mine_for_block, kwargs={'rounds':rounds, 'start_nonce':start_nonce+rounds, 'timestamp': timestamp}, id='mining') #add the block again
+	  	print(event.retval)
+	  	print("inside12")
+	  	sched.add_job(mine_for_block, kwargs={'rounds':rounds, 'start_nonce':start_nonce+rounds, 'timestamp': timestamp}, id='mining') #add the block again
 	sched.print_jobs()
 
 
@@ -342,14 +344,14 @@ class Chain(object):
         for index, cur_block in enumerate(self.blocks[1:]):
             prev_block = self.blocks[index]
             if prev_block.index+1 != cur_block.index:
-                print('index error')
+                #print('index error')
                 return False
             if not cur_block.is_valid():
-                print(cur_block.index)
-                print('Block error')
+                #print(cur_block.index)
+                #print('Block error')
                 return False
             if prev_block.hash != cur_block.prev_hash:
-                print('hash error')
+                #print('hash error')
                 return False
         return True
 
@@ -456,7 +458,7 @@ if __name__ == '__main__':
 
     
     if args.mine:
-        sched.add_job(mine_for_block, kwargs={'rounds':STANDARD_ROUNDS, 'start_nonce':0}, id='mining')
+        sched.add_job(mine_for_block,'interval', seconds = 3, kwargs={'rounds':STANDARD_ROUNDS, 'start_nonce':0}, id='mining')
         sched.add_listener(mine_for_block_listener, apscheduler.events.EVENT_JOB_EXECUTED)
     
     sched.start()
